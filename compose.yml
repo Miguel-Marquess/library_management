@@ -10,5 +10,16 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       
+  library_app:
+    image: library_management_app
+    entrypoint: ./entrypoint.sh
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      - library_database
+    environment:
+      DATABASE_URL: postgresql+psycopg://library_system:library_system_password@library_database:5432/library_system_database
+      
 volumes:
   pgdata:
