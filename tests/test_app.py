@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+
 def test_should_return_welcome(client):
     response = client.get('/')
 

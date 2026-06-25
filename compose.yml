@@ -1,0 +1,14 @@
+services:
+  library_database:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: library_system
+      POSTGRES_DB: library_system_database
+      POSTGRES_PASSWORD: library_system_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      
+volumes:
+  pgdata:
