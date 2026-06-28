@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy import select
+from fastapi import APIRouter
 
-from library_management.database import get_session
+from library_management.depends.database_dependencies import Session
+from library_management.depends.users_dependencies import Current_user
 from library_management.models.db_models import UserDatabase
 from library_management.schemas.users_schemas import (
     Message,
@@ -14,8 +14,14 @@ from library_management.security import get_password_hash
 router = APIRouter(tags=['users'], prefix='/users')
 
 
+@router.get('/', status_code=200, response_model=UserPublic)
+def me(current_user: Current_user):
+
+    return current_user
+
+
 @router.post('/', status_code=201, response_model=UserPublic)
-async def create_user(user: UserSchema, session=Depends(get_session)):
+async def create_user(user: UserSchema, session: Session):
     db_user = UserDatabase(
         **user.model_dump(exclude={'password'}),
         password=get_password_hash(user.password),
@@ -26,28 +32,21 @@ async def create_user(user: UserSchema, session=Depends(get_session)):
     return db_user
 
 
-@router.delete('/{user_id}', status_code=200, response_model=Message)
-async def delete_user(user_id: int, session=Depends(get_session)):
-    user_db = await session.scalar(
-        select(UserDatabase).where(UserDatabase.id == user_id)
-    )
-    await session.delete(user_db)
+@router.delete('/me', status_code=200, response_model=Message)
+async def delete_user(current_user: Current_user, session: Session):
+    await session.delete(current_user)
     await session.commit()
     return {'message': 'User was deleted.'}
 
 
-@router.patch('/{user_id}', status_code=200, response_model=UserPublic)
-async def update_user(user_id: int, user: UserUpdate, session=Depends(get_session)):
-    user_db = await session.scalar(
-        select(UserDatabase).where(UserDatabase.id == user_id)
-    )
-
+@router.patch('/me', status_code=200, response_model=UserPublic)
+async def update_user(current_user: Current_user, user: UserUpdate, session: Session):
     for key, value in user.model_dump(exclude_unset=True, exclude={'password'}).items():
-        setattr(user_db, key, value)
+        setattr(current_user, key, value)
 
     if user.password:
-        user_db.password = get_password_hash(user.password)
+        current_user.password = get_password_hash(user.password)
 
     await session.commit()
-    await session.refresh(user_db)
-    return user_db
+    await session.refresh(current_user)
+    return current_user
