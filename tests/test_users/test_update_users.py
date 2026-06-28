@@ -8,9 +8,10 @@ from library_management.schemas.users_schemas import UserPublic
 from library_management.security import verify_password
 
 
-def test_update_user(client, user):
+def test_update_user(client, user, token):
     response = client.patch(
-        f'users/{user.id}',
+        'users/me',
+        headers={'Authorization': f'Bearer {token}'},
         json={'username': 'updated_name', 'email': 'updated_email@example.com'},
     )
 
@@ -21,9 +22,13 @@ def test_update_user(client, user):
 
 
 @pytest.mark.asyncio
-async def test_update_user_password(client, user, session):
+async def test_update_user_password(client, user, session, token):
     password = 'updatedpassword'
-    response = client.patch(f'/users/{user.id}', json={'password': password})
+    response = client.patch(
+        '/users/me',
+        json={'password': password},
+        headers={'Authorization': f'Bearer {token}'},
+    )
 
     user_password = await session.scalar(
         select(UserDatabase).where(UserDatabase.id == user.id)
