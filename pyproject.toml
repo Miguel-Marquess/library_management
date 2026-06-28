@@ -11,9 +11,11 @@ dependencies = [
     "fastapi[standard] (>=0.138.0,<0.139.0)",
     "pydantic (>=2.13.4,<3.0.0)",
     "psycopg[binary] (>=3.3.4,<4.0.0)",
-    "sqlalchemy (>=2.0.51,<3.0.0)",
+    "sqlalchemy[asyncio] (>=2.0.51,<3.0.0)",
     "alembic (>=1.18.4,<2.0.0)",
     "pwdlib[argon2] (>=0.3.0,<0.4.0)",
+    "tzdata (>=2026.2,<2027.0)",
+    "pyjwt (>=2.13.0,<3.0.0)",
 ]
 
 
@@ -30,7 +32,8 @@ dev = [
     "typos (>=1.47.2,<2.0.0)",
     "testcontainers (>=4.14.2,<5.0.0)",
     "pytest-asyncio (>=1.4.0,<2.0.0)",
-    "factory-boy (>=3.3.3,<4.0.0)"
+    "factory-boy (>=3.3.3,<4.0.0)",
+    "debugpy (>=1.8.21,<2.0.0)"
 ]
 
 [tool.ruff]
@@ -59,3 +62,6 @@ format = 'ruff format'
 run = 'fastapi dev library_management/app.py'
 test = 'pytest -s -x -vv --cov=library_management --cov-report=term-missing --cov-report=html:coverage_html'
 open_covarage = 'xdg-open coverage_html/index.html'
+
+[tool.covarage.run]
+concurrency = ['thread', 'greenlet']

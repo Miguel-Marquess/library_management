@@ -10,6 +10,6 @@ engine = create_async_engine(settings.DATABASE_URL)
 registry_table.metadata.create_all
 
 
-async def get_session():
+async def get_session():  # pragma: no cover
     async with AsyncSession(engine, expire_on_commit=False) as ss:
         yield ss
