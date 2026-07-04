@@ -3,8 +3,8 @@ from fastapi import APIRouter
 from library_management.depends.database_dependencies import Session
 from library_management.depends.users_dependencies import Current_user
 from library_management.models.db_models import UserDatabase
+from library_management.schemas.core_schemas import Message
 from library_management.schemas.users_schemas import (
-    Message,
     UserPublic,
     UserSchema,
     UserUpdate,
