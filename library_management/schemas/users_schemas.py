@@ -1,10 +1,6 @@
 from pydantic import BaseModel, ConfigDict, EmailStr
 
 
-class Message(BaseModel):
-    message: str
-
-
 class UserSchema(BaseModel):
     username: str
     email: EmailStr
