@@ -11,7 +11,12 @@ from testcontainers.postgres import PostgresContainer
 
 from library_management.app import app
 from library_management.database import get_session
-from library_management.models.db_models import UserDatabase, registry_table
+from library_management.models.db_models import (
+    Author,
+    BookDatabase,
+    UserDatabase,
+    registry_table,
+)
 from library_management.security import get_password_hash
 
 
@@ -108,3 +113,85 @@ def token(client, user):
     )
 
     return response.json()['access_token']
+
+
+@pytest_asyncio.fixture
+async def author(session):
+    author = AuthorFactory()
+
+    session.add(author)
+    await session.commit()
+    return author
+
+
+class AuthorFactory(factory.Factory):
+    class Meta:
+        model = Author
+
+    id = factory.Sequence(lambda n: n)
+    name = factory.Sequence(lambda n: f'authortest{n}')
+
+
+@pytest_asyncio.fixture
+async def book_db(author, session):
+    book = BookFactory(author=author)
+    session.add(book)
+    await session.commit()
+    await session.refresh(book)
+
+    return book
+
+
+@pytest.fixture
+def book():
+    book_database = BookFactory()
+    return {
+        'title': book_database.title,
+        'author_id': book_database.author.id,
+        'isbn': book_database.isbn,
+        'year': book_database.year,
+        'publisher': book_database.publisher,
+        'quantity': book_database.quantity,
+        'availables': book_database.availables,
+    }
+
+
+@pytest_asyncio.fixture
+async def many_books(author, session):
+    books = [BookFactory(author=author) for _ in range(1, 5)]
+    session.add_all(books)
+    await session.commit()
+    for book in books:
+        await session.refresh(book)
+    return books
+
+@pytest_asyncio.fixture
+async def many_dicts_books(many_books):
+    def dicts_books(book):
+        return {
+            'title': book.title,
+            'author_id': book.author.id,
+            'isbn': book.isbn,
+            'year': book.year,
+            'publisher': book.publisher,
+            'quantity': 5,
+            'availables': 5,
+            'id': book.id
+        }
+
+    books_dicts = [dicts_books(book) for book in many_books]
+
+    return books_dicts
+
+
+class BookFactory(factory.Factory):
+    class Meta:
+        model = BookDatabase
+
+    title = factory.Sequence(lambda n: f'booktest{n}')
+    author = AuthorFactory()
+    isbn = factory.Sequence(lambda n: f'isbn{n + 1 * 1234568890}')
+    year = factory.Sequence(lambda n: n + 1 * 1111)
+    publisher = factory.Sequence(lambda n: f'publishertest{n}')
+    quantity = 5
+    availables = 5
