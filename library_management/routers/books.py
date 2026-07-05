@@ -36,6 +36,9 @@ async def read_books(filter: BookFilter, current_user: Current_user, session: Se
             select(BookDatabase).where(BookDatabase.isbn == filter.isbn)
         )
 
+        if not book:
+            raise HTTPException(status_code=404, detail='ISBN is not valid.')
+
         return {'books': [book]}
 
     if filter.author_name:

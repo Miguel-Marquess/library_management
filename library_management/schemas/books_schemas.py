@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from library_management.schemas.core_schemas import FilterPage
 
@@ -15,6 +15,7 @@ class Book(BaseModel):
 
 class BookPublic(Book):
     id: int
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BookList(BaseModel):
