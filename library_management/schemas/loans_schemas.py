@@ -27,3 +27,5 @@ class LoanPublic(BaseModel):
 
 class LoanList(BaseModel):
     loans: list['LoanPublic']
+
+    model_config = ConfigDict(from_attributes=True)

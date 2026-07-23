@@ -32,7 +32,8 @@ dev = [
     "testcontainers (>=4.14.2,<5.0.0)",
     "pytest-asyncio (>=1.4.0,<2.0.0)",
     "factory-boy (>=3.3.3,<4.0.0)",
-    "debugpy (>=1.8.21,<2.0.0)"
+    "debugpy (>=1.8.21,<2.0.0)",
+    "pytest-mock (>=3.15.1,<4.0.0)"
 ]
 
 [tool.ruff]
@@ -42,7 +43,7 @@ extend-exclude = ['migrations']
 [tool.ruff.lint]
 preview = true
 select = ['I', 'F', 'E', 'W', 'PL', 'PT']
-ignore = ['PLW0108']
+ignore = ['PLW0108', 'PLR0913', 'PLR0917']
 
 [tool.ruff.format]
 preview = true

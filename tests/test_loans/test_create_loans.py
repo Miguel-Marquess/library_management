@@ -28,6 +28,7 @@ async def test_create_loan(client, user, token, book_db, session):
 
     assert response.status_code == HTTPStatus.CREATED
     assert response.json() == loan_public.model_dump(mode='json')
+    assert book_db.quantity > book_db.availables
 
 
 def test_create_loan_has_already_loan(client, loan, token, book_db):
@@ -59,3 +60,17 @@ def test_create_loan_has_max_limit(client, token, book_db, three_loans):
     assert response.json() == {
         'detail': 'User has reached the maximum number of active loans.'
     }
+
+
+@pytest.mark.asyncio
+async def test_create_loan_book_not_availables(client, session, token, book_db):
+    book_db.availables = 0
+    session.add(book_db)
+    await session.commit()
+
+    response = client.post(
+        f'/loans/{book_db.isbn}', headers={'Authorization': f'Bearer {token}'}
+    )
+
+    assert response.status_code == HTTPStatus.CONFLICT
+    assert response.json() == {'detail': 'Book is not available.'}
