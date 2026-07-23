@@ -22,8 +22,8 @@ from library_management.security import get_password_hash
 
 @pytest.fixture
 def client(session):
-    def get_session_override():
-        return session
+    async def get_session_override():
+        yield session
 
     with TestClient(app) as client:
         app.dependency_overrides[get_session] = get_session_override
@@ -128,8 +128,7 @@ class AuthorFactory(factory.Factory):
     class Meta:
         model = Author
 
-    id = factory.Sequence(lambda n: n)
-    name = factory.Sequence(lambda n: f'authortest{n}')
+    name = factory.faker.Faker('name')
 
 
 @pytest_asyncio.fixture
@@ -142,46 +141,33 @@ async def book_db(author, session):
     return book
 
 
+def to_serialize(book):
+    return {
+        'title': book.title,
+        'author_id': book.author.id,
+        'isbn': book.isbn,
+        'year': book.year,
+        'publisher': book.publisher,
+        'quantity': 5,
+        'availables': 5,
+        'id': book.id,
+    }
+
+
 @pytest.fixture
 def book():
-    book_database = BookFactory()
-    return {
-        'title': book_database.title,
-        'author_id': book_database.author.id,
-        'isbn': book_database.isbn,
-        'year': book_database.year,
-        'publisher': book_database.publisher,
-        'quantity': book_database.quantity,
-        'availables': book_database.availables,
-    }
+    book = BookFactory()
+    return to_serialize(book)
 
 
 @pytest_asyncio.fixture
 async def many_books(author, session):
-    books = [BookFactory(author=author) for _ in range(1, 5)]
+    books = BookFactory.create_batch(5, author=author)
     session.add_all(books)
     await session.commit()
     for book in books:
         await session.refresh(book)
-    return books
-
-@pytest_asyncio.fixture
-async def many_dicts_books(many_books):
-    def dicts_books(book):
-        return {
-            'title': book.title,
-            'author_id': book.author.id,
-            'isbn': book.isbn,
-            'year': book.year,
-            'publisher': book.publisher,
-            'quantity': 5,
-            'availables': 5,
-            'id': book.id
-        }
-
-    books_dicts = [dicts_books(book) for book in many_books]
-
-    return books_dicts
+    return [to_serialize(book) for book in books]
 
 
 class BookFactory(factory.Factory):
@@ -189,12 +175,13 @@ class BookFactory(factory.Factory):
         model = BookDatabase
 
     title = factory.Sequence(lambda n: f'booktest{n}')
-    author = AuthorFactory()
+    author = factory.SubFactory(AuthorFactory)
     isbn = factory.Sequence(lambda n: f'isbn{n + 1 * 1234568890}')
     year = factory.Sequence(lambda n: n + 1 * 1111)
     publisher = factory.Sequence(lambda n: f'publishertest{n}')
     quantity = 5
     availables = 5
+
 class LoanFactory(factory.Factory):
     class Meta:
         model = LoanDatabase
@@ -232,3 +219,21 @@ async def three_loans(session, user):
         await session.refresh(loan)
 
     return loans
+
+
+def serialize_author(author):
+    return {'id': author.id, 'name': author.name}
+
+
+@pytest_asyncio.fixture
+async def many_authors(session):
+    authors = AuthorFactory.create_batch(5)
+    session.add_all(authors)
+    await session.commit()
+
+    return {
+        'authors': [
+            serialize_author(to_serialize_author) for to_serialize_author in authors
+        ]
+    }
+

@@ -1,11 +1,20 @@
-from fastapi import APIRouter, HTTPException
+from typing import Annotated
+
+from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select
 
 from library_management.depends.books_dependencies import BookFilter
 from library_management.depends.database_dependencies import Session
 from library_management.depends.users_dependencies import Current_user
 from library_management.models.db_models import Author, BookDatabase
-from library_management.schemas.books_schemas import Book, BookList, BookPublic
+from library_management.schemas.books_schemas import (
+    AuthorPublic,
+    AuthorSchema,
+    AuthorsList,
+    Book,
+    BookList,
+    BookPublic,
+)
 
 router = APIRouter(tags=['library'], prefix='/books')
 
@@ -58,3 +67,32 @@ async def read_books(filter: BookFilter, current_user: Current_user, session: Se
     result = await session.scalars(query.offset(filter.start).limit(filter.ends))
 
     return {'books': result}
+
+
+@router.get('/authors', response_model=AuthorsList, status_code=200)
+async def read_authors(
+    author_schema: Annotated[AuthorSchema, Query()],
+    session: Session,
+    user: Current_user,
+):
+    query = select(Author)
+    author_name = author_schema.name
+
+    if author_name:
+        query = query.where(Author.name.contains(author_name))
+
+    authors = await session.scalars(query)
+
+    return {'authors': authors}
+
+
+@router.post('/author', status_code=201, response_model=AuthorPublic)
+async def create_author(author: AuthorSchema, user: Current_user, session: Session):
+    if not author.name:
+        raise HTTPException(status_code=422, detail='Author name cannot be None.')
+
+    author = Author(name=author.name)
+    session.add(author)
+    await session.commit()
+
+    return author

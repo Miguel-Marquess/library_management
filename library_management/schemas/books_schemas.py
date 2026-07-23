@@ -23,11 +23,15 @@ class BookList(BaseModel):
 
 
 class AuthorSchema(BaseModel):
-    name: str
+    name: str | None = None
 
 
 class AuthorPublic(AuthorSchema):
     id: int
+
+
+class AuthorsList(BaseModel):
+    authors: list[AuthorPublic]
 
 
 class FilterBook(FilterPage):
