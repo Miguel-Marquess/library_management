@@ -11,14 +11,19 @@ from testcontainers.postgres import PostgresContainer
 
 from library_management.app import app
 from library_management.database import get_session
-from library_management.models.db_models import UserDatabase, registry_table
+from library_management.models.db_models import (
+    Author,
+    BookDatabase,
+    UserDatabase,
+    registry_table,
+)
 from library_management.security import get_password_hash
 
 
 @pytest.fixture
 def client(session):
-    def get_session_override():
-        return session
+    async def get_session_override():
+        yield session
 
     with TestClient(app) as client:
         app.dependency_overrides[get_session] = get_session_override
@@ -108,3 +113,87 @@ def token(client, user):
     )
 
     return response.json()['access_token']
+
+
+@pytest_asyncio.fixture
+async def author(session):
+    author = AuthorFactory()
+
+    session.add(author)
+    await session.commit()
+    return author
+
+
+class AuthorFactory(factory.Factory):
+    class Meta:
+        model = Author
+
+    name = factory.faker.Faker('name')
+
+
+@pytest_asyncio.fixture
+async def book_db(author, session):
+    book = BookFactory(author=author)
+    session.add(book)
+    await session.commit()
+    await session.refresh(book)
+
+    return book
+
+
+def to_serialize(book):
+    return {
+        'title': book.title,
+        'author_id': book.author.id,
+        'isbn': book.isbn,
+        'year': book.year,
+        'publisher': book.publisher,
+        'quantity': 5,
+        'availables': 5,
+        'id': book.id,
+    }
+
+
+@pytest.fixture
+def book():
+    book = BookFactory()
+    return to_serialize(book)
+
+
+@pytest_asyncio.fixture
+async def many_books(author, session):
+    books = BookFactory.create_batch(5, author=author)
+    session.add_all(books)
+    await session.commit()
+    for book in books:
+        await session.refresh(book)
+    return [to_serialize(book) for book in books]
+
+
+class BookFactory(factory.Factory):
+    class Meta:
+        model = BookDatabase
+
+    title = factory.Sequence(lambda n: f'booktest{n}')
+    author = factory.SubFactory(AuthorFactory)
+    isbn = factory.Sequence(lambda n: f'isbn{n + 1 * 1234568890}')
+    year = factory.Sequence(lambda n: n + 1 * 1111)
+    publisher = factory.Sequence(lambda n: f'publishertest{n}')
+    quantity = 5
+    availables = 5
+
+def serialize_author(author):
+    return {'id': author.id, 'name': author.name}
+
+
+@pytest_asyncio.fixture
+async def many_authors(session):
+    authors = AuthorFactory.create_batch(5)
+    session.add_all(authors)
+    await session.commit()
+
+    return {
+        'authors': [
+            serialize_author(to_serialize_author) for to_serialize_author in authors
+        ]
+    }
