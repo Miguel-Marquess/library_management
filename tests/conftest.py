@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import factory
 import pytest
@@ -195,3 +195,40 @@ class BookFactory(factory.Factory):
     publisher = factory.Sequence(lambda n: f'publishertest{n}')
     quantity = 5
     availables = 5
+class LoanFactory(factory.Factory):
+    class Meta:
+        model = LoanDatabase
+
+    user_id = factory.SelfAttribute('user.id')
+    book_id = factory.SelfAttribute('book.id')
+
+    due_date = factory.LazyFunction(lambda: datetime.now() + timedelta(days=15))
+    returned_at = None
+    status = LoanStatus.ACTIVE
+
+
+@pytest_asyncio.fixture
+async def loan(session, user, book_db):
+    loan_database = LoanFactory(user_id=user.id, book_id=book_db.id)
+
+    session.add(loan_database)
+    await session.commit()
+    await session.refresh(loan_database)
+
+    return loan_database
+
+
+@pytest_asyncio.fixture
+async def three_loans(session, user):
+    books = BookFactory.create_batch(3)
+    session.add_all(books)
+    await session.commit()
+
+    loans = [LoanFactory(user_id=user.id, book_id=book.id) for book in books]
+
+    session.add_all(loans)
+    await session.commit()
+    for loan in loans:
+        await session.refresh(loan)
+
+    return loans
