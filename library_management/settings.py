@@ -8,3 +8,4 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES_TIME: int
     TOKEN_SECRET_KEY: str
     ALGORITHM: str
+    MAX_VALUE_LOANS: int
