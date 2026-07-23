@@ -80,7 +80,6 @@ class LoanService:
             await self.session.rollback()
             raise
         await self.session.refresh(loan)
-        await self.session.refresh(book)
 
         return LoanPublic.model_validate(loan)
 
@@ -90,6 +89,9 @@ class LoanService:
                 LoanDatabase.id == loan_id, LoanDatabase.user_id == user.id
             )
         )
+
+        if not loan:
+            raise HTTPException(status_code=404, detail='Loan not exist.')
 
         if loan.status == LoanStatus.RETURNED:
             raise HTTPException(status_code=409, detail='Loan is already returned.')
