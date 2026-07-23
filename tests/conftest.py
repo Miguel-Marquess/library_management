@@ -200,8 +200,8 @@ class LoanFactory(factory.Factory):
 @pytest_asyncio.fixture
 async def loan(session, user, book_db):
     loan_database = LoanFactory(user_id=user.id, book_id=book_db.id)
-
-    session.add(loan_database)
+    book_db.availables -= 1
+    session.add_all([loan_database, book_db])
     await session.commit()
     await session.refresh(loan_database)
 
@@ -210,7 +210,7 @@ async def loan(session, user, book_db):
 
 @pytest_asyncio.fixture
 async def three_loans(session, user):
-    books = BookFactory.create_batch(3)
+    books = BookFactory.create_batch(3, availables=4)
     session.add_all(books)
     await session.commit()
 
