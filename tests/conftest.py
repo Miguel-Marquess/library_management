@@ -14,9 +14,11 @@ from library_management.database import get_session
 from library_management.models.db_models import (
     Author,
     BookDatabase,
+    LoanDatabase,
     UserDatabase,
     registry_table,
 )
+from library_management.schemas.loans_schemas import LoanStatus
 from library_management.security import get_password_hash
 
 
@@ -182,6 +184,7 @@ class BookFactory(factory.Factory):
     quantity = 5
     availables = 5
 
+
 class LoanFactory(factory.Factory):
     class Meta:
         model = LoanDatabase
@@ -236,4 +239,3 @@ async def many_authors(session):
             serialize_author(to_serialize_author) for to_serialize_author in authors
         ]
     }
-
