@@ -1,5 +1,9 @@
 from http import HTTPStatus
 
+import pytest
+from sqlalchemy import select
+
+from library_management.models.db_models import Author
 from library_management.schemas.books_schemas import BookPublic
 
 
@@ -101,3 +105,30 @@ def test_get_all_authors_with_name_contains_c(client, many_authors, token):
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'authors': authors}
+
+
+@pytest.mark.asyncio
+async def test_create_author(client, token, session):
+    response = client.post(
+        '/books/author',
+        headers={'Authorization': f'Bearer {token}'},
+        json={'name': 'testauthor'},
+    )
+
+    assert response.status_code == HTTPStatus.CREATED
+    assert response.json()['id']
+
+    author = await session.scalar(
+        select(Author).where(Author.id == response.json()['id'])
+    )
+
+    assert response.json()['name'] == author.name
+
+
+def test_create_author_with_name_none(client, token, session):
+    response = client.post(
+        '/books/author', headers={'Authorization': f'Bearer {token}'}, json={'name': ''}
+    )
+
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert response.json() == {'detail': 'Author name cannot be None.'}

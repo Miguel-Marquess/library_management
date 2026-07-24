@@ -29,6 +29,8 @@ class AuthorSchema(BaseModel):
 class AuthorPublic(AuthorSchema):
     id: int
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class AuthorsList(BaseModel):
     authors: list[AuthorPublic]
